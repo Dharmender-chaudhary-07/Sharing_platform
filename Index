@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Sharing App</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        nav {
+            background: #4F46E5;
+            color: white;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        nav ul {
+            display: flex;
+            gap: 1rem;
+            list-style: none;
+        }
+
+        nav a, nav button {
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        nav a:hover, nav button:hover {
+            color: #F59E0B;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 0.3rem;
+            cursor: pointer;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: white;
+        }
+
+        .section {
+            padding: 2rem 0;
+            text-align: center;
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: #4F46E5;
+            margin-bottom: 1.5rem;
+        }
+
+        form {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        input, textarea, select, button {
+            padding: 0.8rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+
+        button {
+            background: #10B981;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .resource-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .resource-card:hover {
+            transform: scale(1.02);
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            nav ul {
+                display: none;
+                flex-direction: column;
+                background: #4F46E5;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                width: 100%;
+                padding: 1rem;
+            }
+
+            nav ul.active {
+                display: flex;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <h1>ResourceShare</h1>
+            <ul id="nav-links">
+                <li><a onclick="showSection('home')">Home</a></li>
+                <li><a onclick="showSection('search')">Search</a></li>
+                <li><a onclick="showSection('share')" id="share-link">Share Resource</a></li>
+                <li><a onclick="showSection('profile')" id="profile-link">Profile</a></li>
+                <li><button onclick="signOut()" id="signout-btn">Sign Out</button></li>
+                <li><a onclick="showSection('login')" id="login-link">Login</a></li>
+                <li><a onclick="showSection('signup')" id="signup-link">Sign Up</a></li>
+            </ul>
+            <div class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="home" class="section active">
+            <h2>Welcome to ResourceShare</h2>
+            <p>Share and discover resources in your community!</p>
+            <button onclick="showSection('search')" class="mt-4">Find Resources</button>
+        </div>
+
+        <div id="signup" class="section">
+            <h2>Sign Up</h2>
+            <form id="signup-form">
+                <input type="text" id="signup-name" placeholder="Name" required>
+                <input type="email" id="signup-email" placeholder="Email" required>
+                <input type="password" id="signup-password" placeholder="Password" required>
+                <input type="text" id="signup-location" placeholder="Location" required>
+                <input type="tel" id="signup-phone" placeholder="Phone Number" required>
+                <button type="submit">Sign Up</button>
+            </form>
+        </div>
+
+        <div id="login" class="section">
+            <h2>Login</h2>
+            <form id="login-form">
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <div id="profile" class="section">
+            <h2>Your Profile</h2>
+            <form id="profile-form">
+                <input type="text" id="profile-name" placeholder="Name" required>
+                <input type="text" id="profile-location" placeholder="Location" required>
+                <input type="tel" id="profile-phone" placeholder="Phone Number" required>
+                <button type="submit">Update Profile</button>
+            </form>
+        </div>
+
+        <div id="share" class="section">
+            <h2>Share a Resource</h2>
+            <form id="share-form">
+                <input type="text" id="share-title" placeholder="Resource Title" required>
+                <textarea id="share-description" placeholder="Description"></textarea>
+                <input type="number" id="share-price" placeholder="Price (per hour)" required>
+                <input type="datetime-local" id="share-start" required>
+                <input type="datetime-local" id="share-end" required>
+                <input type="text" id="share-location" placeholder="Location" required>
+                <button type="submit">Share Resource</button>
+            </form>
+        </div>
+
+        <div id="search" class="section">
+            <h2>Search Resources</h2>
+            <div class="search-bar">
+                <input type="text" id="search-title" placeholder="Search by title...">
+                <input type="text" id="search-location" placeholder="Search by location...">
+            </div>
+            <div id="resources-grid" class="resources-grid"></div>
+        </div>
+
+        <div id="book" class="section">
+            <h2>Book Resource</h2>
+            <h3 id="book-title"></h3>
+            <form id="book-form">
+                <label>Start Time</label>
+                <input type="datetime-local" id="book-start" required>
+                <label>End Time</label>
+                <input type="datetime-local" id="book-end" required>
+                <label>Payment Method</label>
+                <select id="book-payment">
+                    <option value="credit">Credit Card</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="bank">Bank Transfer</option>
+                </select>
+                <button type="submit">Confirm Booking</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const supabase = Supabase.createClient(
+            'your-supabase-project-url',
+            'your-supabase-anon-key'
+        );
+
+        let currentUser = null;
+        let currentResourceId = null;
+
+        // Check user session
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            currentUser = user;
+            updateNav();
+            if (user && window.location.hash === '#profile') {
+                loadProfile();
+            }
+        }
+
+        // Update navigation based on user state
+        function updateNav() {
+            const loggedIn = currentUser !== null;
+            document.getElementById('login-link').style.display = loggedIn ? 'none' : 'block';
+            document.getElementById('signup-link').style.display = loggedIn ? 'none' : 'block';
+            document.getElementById('profile-link').style.display = loggedIn ? 'block' : 'none';
+            document.getElementById('share-link').style.display = loggedIn ? 'block' : 'none';
+            document.getElementById('signout-btn').style.display = loggedIn ? 'block' : 'none';
+        }
+
+        // Toggle mobile menu
+        function toggleMenu() {
+            const navLinks = document.getElementById('nav-links');
+            navLinks.classList.toggle('active');
+        }
+
+        // Show specific section
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+            if (sectionId === 'profile' && currentUser) {
+                loadProfile();
+            }
+            if (sectionId === 'search') {
+                searchResources();
+            }
+            window.location.hash = sectionId;
+        }
+
+        // Sign Up
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const location = document.getElementById('signup-location').value;
+            const phone = document.getElementById('signup-phone').value;
+
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: { data: { name, location, phone_number: phone } }
+            });
+
+            if (error) {
+                alert(error.message);
+            } else {
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .insert([{ id: data.user.id, name, location, phone_number: phone }]);
+                if (profileError) {
+                    alert(profileError.message);
+                } else {
+                    alert('Check your email for confirmation link!');
+                    showSection('login');
+                }
+            }
+        });
+
+        // Login
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                alert(error.message);
+            } else {
+                await checkUser();
+                showSection('profile');
+            }
+        });
+
+        // Sign Out
+        async function signOut() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            updateNav();
+            showSection('home');
+        }
+
+        // Load Profile
+        async function loadProfile() {
+            if (!currentUser) {
+                showSection('login');
+                return;
+            }
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('name, location, phone_number')
+                .eq('id', currentUser.id)
+                .single();
+            if (data) {
+                document.getElementById('profile-name').value = data.name;
+                document.getElementById('profile-location').value = data.location;
+                document.getElementById('profile-phone').value = data.phone_number;
+            }
+        }
+
+        // Update Profile
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                showSection('login');
+                return;
+            }
+            const name = document.getElementById('profile-name').value;
+            const location = document.getElementById('profile-location').value;
+            const phone = document.getElementById('profile-phone').value;
+
+            const { error } = await supabase
+                .from('profiles')
+                .update({ name, location, phone_number: phone })
+                .eq('id', currentUser.id);
+            if (error) {
+                alert(error.message);
+            } else {
+                alert('Profile updated!');
+            }
+        });
+
+        // Share Resource
+        document.getElementById('share-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                showSection('login');
+                return;
+            }
+            const resource = {
+                title: document.getElementById('share-title').value,
+                description: document.getElementById('share-description').value,
+                price: document.getElementById('share-price').value,
+                availability_start: document.getElementById('share-start').value,
+                availability_end: document.getElementById('share-end').value,
+                location: document.getElementById('share-location').value,
+                user_id: currentUser.id
+            };
+
+            const { error } = await supabase.from('resources').insert([resource]);
+            if (error) {
+                alert(error.message);
+            } else {
+                alert('Resource shared!');
+                showSection('search');
+            }
+        });
+
+        // Search Resources
+        async function searchResources() {
+            const title = document.getElementById('search-title').value;
+            const location = document.getElementById('search-location').value;
+            let query = supabase.from('resources').select('*');
+            if (title) query = query.ilike('title', `%${title}%`);
+            if (location) query = query.ilike('location', `%${location}%`);
+            const { data, error } = await query;
+            const grid = document.getElementById('resources-grid');
+            grid.innerHTML = '';
+            if (data) {
+                data.forEach(resource => {
+                    const card = document.createElement('div');
+                    card.className = 'resource-card';
+                    card.innerHTML = `
+                        <h3>${resource.title}</h3>
+                        <p>${resource.description || 'No description'}</p>
+                        <p>Price: $${resource.price}/hour</p>
+                        <p>Location: ${resource.location}</p>
+                        <p>Available: ${new Date(resource.availability_start).toLocaleString()} - ${new Date(resource.availability_end).toLocaleString()}</p>
+                        <button onclick="showBookSection(${resource.id}, '${resource.title}')">Book Now</button>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        // Show Book Section
+        function showBookSection(id, title) {
+            currentResourceId = id;
+            document.getElementById('book-title').textContent = title;
+            showSection('book');
+        }
+
+        // Book Resource
+        document.getElementById('book-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                showSection('login');
+                return;
+            }
+            const booking = {
+                resource_id: currentResourceId,
+                user_id: currentUser.id,
+                booking_start: document.getElementById('book-start').value,
+                booking_end: document.getElementById('book-end').value,
+                status: 'confirmed'
+            };
+
+            const { error } = await supabase.from('bookings').insert([booking]);
+            if (error) {
+                alert(error.message);
+            } else {
+                alert('Booking confirmed! Payment processed (simulated).');
+                showSection('search');
+            }
+        });
+
+        // Event Listeners for Search
+        document.getElementById('search-title').addEventListener('input', searchResources);
+        document.getElementById('search-location').addEventListener('input', searchResources);
+
+        // Initialize
+        checkUser();
+        if (window.location.hash) {
+            showSection(window.location.hash.slice(1));
+        }
+    </script>
+</body>
+</html>
